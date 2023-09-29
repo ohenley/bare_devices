@@ -1,0 +1,50 @@
+with "config/bare_devices_config.gpr";
+with "config/bare_svd_config.gpr";
+project Bare_Devices is
+
+   for Target use "arm-eabi";
+
+   Src_Dirs := ();
+   Lib_Name := "";
+   case bare_svd_config.FAMILY is
+      when "stm32" =>
+         for Runtime ("Ada") use "light-tasking-stm32f746disco";
+         Src_Dirs := Src_Dirs & ("src/stm32/",
+                                 "src/stm32/" &
+                                 "/" & bare_svd_config.CORE_TYPE & 
+                                 "/" & bare_svd_config.CORE &
+                                 "/" & Bare_Devices_Config.SOC_REMAINDER);
+         Lib_Name := "_stm32" & 
+                     bare_svd_config.CORE_TYPE & 
+                     bare_svd_config.CORE & 
+                     Bare_Devices_Config.SOC_REMAINDER &
+                     "_device";
+   end case;
+
+   for Source_Dirs use ("src/", "config/") & Src_Dirs;
+   for Object_Dir use "obj/" & Bare_Devices_Config.Build_Profile;
+
+   for Create_Missing_Dirs use "True";
+
+   for Library_Dir use "lib";
+   for Library_Name use Lib_Name;
+   for Library_Version use Project'Library_Name & ".so." & Bare_Devices_Config.Crate_Version;
+
+   type Library_Type_Type is ("relocatable", "static", "static-pic");
+   Library_Type : Library_Type_Type :=
+     external ("BARE_DEVICES_LIBRARY_TYPE", external ("LIBRARY_TYPE", "static"));
+   for Library_Kind use Library_Type;
+
+   package Compiler is
+      for Default_Switches ("Ada") use Bare_Devices_Config.Ada_Compiler_Switches;
+   end Compiler;
+
+   package Binder is
+      for Switches ("Ada") use ("-Es"); --  Symbolic traceback
+   end Binder;
+
+   package Install is
+      for Artifacts (".") use ("share");
+   end Install;
+
+end Bare_Devices;
