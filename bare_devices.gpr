@@ -1,4 +1,5 @@
 with "config/bare_devices_config.gpr";
+with "config/bare_core_config.gpr";
 with "config/bare_svd_config.gpr";
 project Bare_Devices is
 
@@ -11,13 +12,13 @@ project Bare_Devices is
          for Runtime ("Ada") use "light-tasking-stm32f746disco";
          Src_Dirs := Src_Dirs & ("src/stm32/",
                                  "src/stm32/" &
-                                 "/" & bare_svd_config.CORE_TYPE & 
-                                 "/" & bare_svd_config.CORE &
-                                 "/" & Bare_Devices_Config.SOC_REMAINDER);
+                                 "/" & bare_core_config.CORE_TYPE & 
+                                 "/" & bare_core_config.CORE &
+                                 "/" & bare_svd_config.SOC_REMAINDER);
          Lib_Name := "_stm32" & 
-                     bare_svd_config.CORE_TYPE & 
-                     bare_svd_config.CORE & 
-                     Bare_Devices_Config.SOC_REMAINDER &
+                     "_" & bare_core_config.CORE_TYPE & 
+                     "_" & bare_core_config.CORE & 
+                     "_" & bare_svd_config.SOC_REMAINDER &
                      "_device";
    end case;
 

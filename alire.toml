@@ -6,11 +6,8 @@ authors = ["Olivier Henley"]
 maintainers = ["Olivier Henley <olivier.henley@gmail.com>"]
 maintainers-logins = ["ohenley"]
 
-[configuration.variables]
-soc_remainder = { type = "Enum", values = ["xx", "xx9", "x0x", "x2x", "x6_79x"], default = "xx" }
-#high_speed_external_clock = {type = "Integer", first = 0, last = 25000000, default = 25000000}
-
 [[depends-on]]
 bare_types = "0.1.0-dev"
+bare_core = "0.1.0-dev"
 bare_svd = "0.1.0-dev"
 bare_drivers = "0.1.0-dev"
