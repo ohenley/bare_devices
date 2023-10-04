@@ -770,116 +770,124 @@ package body STM32.Device is
    --     end case;
    --  end Set_Clock_Source;
 
-   --  ------------------------------
-   --  -- System_Clock_Frequencies --
-   --  ------------------------------
+   ------------------------------
+   -- System_Clock_Frequencies --
+   ------------------------------
+   HSI_VALUE : constant := 16_000_000;
+   HSE_VALUE : UInt32 := HSI_VALUE;
 
-   --  function System_Clock_Frequencies return RCC_System_Clocks
-   --  is
-   --     Source       : constant UInt2 := RCC_Periph.CFGR.SWS;
-   --     Result       : RCC_System_Clocks;
-   --  begin
-   --     Result.I2SCLK := 0;
+   procedure Set_High_Speed_External_Clock (Frequency : in out UInt32) is
+   begin
+      HSE_VALUE := Frequency;
+   end Set_High_Speed_External_Clock;
 
-   --     case Source is
-   --        when 0 =>
-   --           --  HSI as source
-   --           Result.SYSCLK := HSI_VALUE;
-   --        when 1 =>
-   --           --  HSE as source
-   --           Result.SYSCLK := HSE_VALUE;
-   --        when 2 =>
-   --           --  PLL as source
-   --           declare
-   --              HSE_Source : constant Boolean := RCC_Periph.PLLCFGR.PLLSRC;
-   --              Pllm       : constant UInt32 :=
-   --                             UInt32 (RCC_Periph.PLLCFGR.PLLM);
-   --              Plln       : constant UInt32 :=
-   --                             UInt32 (RCC_Periph.PLLCFGR.PLLN);
-   --              Pllp       : constant UInt32 :=
-   --                             (UInt32 (RCC_Periph.PLLCFGR.PLLP) + 1) * 2;
-   --              Pllvco     : UInt32;
-   --           begin
-   --              if not HSE_Source then
-   --                 Pllvco := HSI_VALUE;
-   --              else
-   --                 Pllvco := HSE_VALUE;
-   --              end if;
 
-   --              Pllvco := Pllvco / Pllm;
+   function System_Clock_Frequencies return RCC_System_Clocks
+   is
+      Source       : constant UInt2 := RCC_Periph.CFGR.SWS;
+      Result       : RCC_System_Clocks;
+   begin
+      Result.I2SCLK := 0;
 
-   --              Result.I2SCLK := Pllvco;
+      case Source is
+         when 0 =>
+            --  HSI as source
+            Result.SYSCLK := HSI_VALUE;
+         when 1 =>
+            --  HSE as source
+            Result.SYSCLK := HSE_VALUE;
+         when 2 =>
+            --  PLL as source
+            declare
+               HSE_Source : constant Boolean := RCC_Periph.PLLCFGR.PLLSRC;
+               Pllm       : constant UInt32 :=
+                              UInt32 (RCC_Periph.PLLCFGR.PLLM);
+               Plln       : constant UInt32 :=
+                              UInt32 (RCC_Periph.PLLCFGR.PLLN);
+               Pllp       : constant UInt32 :=
+                              (UInt32 (RCC_Periph.PLLCFGR.PLLP) + 1) * 2;
+               Pllvco     : UInt32;
+            begin
+               if not HSE_Source then
+                  Pllvco := HSI_VALUE;
+               else
+                  Pllvco := HSE_VALUE;
+               end if;
 
-   --              Pllvco := Pllvco * Plln;
+               Pllvco := Pllvco / Pllm;
 
-   --              Result.SYSCLK := Pllvco / Pllp;
-   --           end;
-   --        when others =>
-   --           Result.SYSCLK := HSI_VALUE;
-   --     end case;
+               Result.I2SCLK := Pllvco;
 
-   --     declare
-   --        HPRE  : constant UInt4 := RCC_Periph.CFGR.HPRE;
-   --        PPRE1 : constant UInt3 := RCC_Periph.CFGR.PPRE.Arr (1);
-   --        PPRE2 : constant UInt3 := RCC_Periph.CFGR.PPRE.Arr (2);
-   --     begin
-   --        Result.HCLK  := Result.SYSCLK / HPRE_Presc_Table (HPRE);
-   --        Result.PCLK1 := Result.HCLK / PPRE_Presc_Table (PPRE1);
-   --        Result.PCLK2 := Result.HCLK / PPRE_Presc_Table (PPRE2);
+               Pllvco := Pllvco * Plln;
 
-   --        --  Timer clocks
-   --        --  See Dedicated clock cfg register documentation.
-   --        if not RCC_Periph.DKCFGR1.TIMPRE then
-   --           --  Mode 0: When TIMPRE bit of the RCC_DKCFGR1 register is reset,
-   --           --  if APBx prescaler is 1, then TIMxCLK = PCLKx, otherwise TIMxCLK
-   --           --  = 2x PCLKx
-   --           if PPRE_Presc_Table (PPRE1) = 1 then
-   --              Result.TIMCLK1 := Result.PCLK1;
-   --           else
-   --              Result.TIMCLK1 := Result.PCLK1 * 2;
-   --           end if;
-   --           if PPRE_Presc_Table (PPRE2) = 1 then
-   --              Result.TIMCLK2 := Result.PCLK2;
-   --           else
-   --              Result.TIMCLK2 := Result.PCLK2 * 2;
-   --           end if;
-   --        else
-   --           --  Mpde 1: When TIMPRE bit in the RCC_DCKCFGR1 register is set,
-   --           --  if APBx prescaler is 1,2 or 4, then TIMxCLK = HCLK, otherwise
-   --           --  TIMxCLK = 4x PCLKx.
-   --           if PPRE_Presc_Table (PPRE1) in 1 .. 4 then
-   --              Result.TIMCLK1 := Result.HCLK;
-   --           else
-   --              Result.TIMCLK1 := Result.PCLK1 * 4;
-   --           end if;
-   --           if PPRE_Presc_Table (PPRE2) in 1 .. 4 then
-   --              Result.TIMCLK2 := Result.HCLK;
-   --           else
-   --              Result.TIMCLK2 := Result.PCLK1 * 4;
-   --           end if;
-   --        end if;
-   --     end;
+               Result.SYSCLK := Pllvco / Pllp;
+            end;
+         when others =>
+            Result.SYSCLK := HSI_VALUE;
+      end case;
 
-   --     -- I2S Clock --
+      declare
+         HPRE  : constant UInt4 := RCC_Periph.CFGR.HPRE;
+         PPRE1 : constant UInt3 := RCC_Periph.CFGR.PPRE.Arr (1);
+         PPRE2 : constant UInt3 := RCC_Periph.CFGR.PPRE.Arr (2);
+      begin
+         Result.HCLK  := Result.SYSCLK / HPRE_Presc_Table (HPRE);
+         Result.PCLK1 := Result.HCLK / PPRE_Presc_Table (PPRE1);
+         Result.PCLK2 := Result.HCLK / PPRE_Presc_Table (PPRE2);
 
-   --     if RCC_Periph.CFGR.I2SSRC then
-   --        --  External clock source
-   --        Result.I2SCLK := 0;
-   --        raise Program_Error with "External I2S clock value is unknown";
-   --     else
-   --        --  Pll clock source
-   --        declare
-   --           Plli2sn : constant UInt32 :=
-   --             UInt32 (RCC_Periph.PLLI2SCFGR.PLLI2SN);
-   --           Plli2sr : constant UInt32
-   --             := UInt32 (RCC_Periph.PLLI2SCFGR.PLLI2SR);
-   --        begin
-   --           Result.I2SCLK := (Result.I2SCLK * Plli2sn) / Plli2sr;
-   --        end;
-   --     end if;
+         --  Timer clocks
+         --  See Dedicated clock cfg register documentation.
+         if not RCC_Periph.DKCFGR1.TIMPRE then
+            --  Mode 0: When TIMPRE bit of the RCC_DKCFGR1 register is reset,
+            --  if APBx prescaler is 1, then TIMxCLK = PCLKx, otherwise TIMxCLK
+            --  = 2x PCLKx
+            if PPRE_Presc_Table (PPRE1) = 1 then
+               Result.TIMCLK1 := Result.PCLK1;
+            else
+               Result.TIMCLK1 := Result.PCLK1 * 2;
+            end if;
+            if PPRE_Presc_Table (PPRE2) = 1 then
+               Result.TIMCLK2 := Result.PCLK2;
+            else
+               Result.TIMCLK2 := Result.PCLK2 * 2;
+            end if;
+         else
+            --  Mpde 1: When TIMPRE bit in the RCC_DCKCFGR1 register is set,
+            --  if APBx prescaler is 1,2 or 4, then TIMxCLK = HCLK, otherwise
+            --  TIMxCLK = 4x PCLKx.
+            if PPRE_Presc_Table (PPRE1) in 1 .. 4 then
+               Result.TIMCLK1 := Result.HCLK;
+            else
+               Result.TIMCLK1 := Result.PCLK1 * 4;
+            end if;
+            if PPRE_Presc_Table (PPRE2) in 1 .. 4 then
+               Result.TIMCLK2 := Result.HCLK;
+            else
+               Result.TIMCLK2 := Result.PCLK1 * 4;
+            end if;
+         end if;
+      end;
 
-   --     return Result;
-   --  end System_Clock_Frequencies;
+      -- I2S Clock --
+
+      if RCC_Periph.CFGR.I2SSRC then
+         --  External clock source
+         Result.I2SCLK := 0;
+         raise Program_Error with "External I2S clock value is unknown";
+      else
+         --  Pll clock source
+         declare
+            Plli2sn : constant UInt32 :=
+              UInt32 (RCC_Periph.PLLI2SCFGR.PLLI2SN);
+            Plli2sr : constant UInt32
+              := UInt32 (RCC_Periph.PLLI2SCFGR.PLLI2SR);
+         begin
+            Result.I2SCLK := (Result.I2SCLK * Plli2sn) / Plli2sr;
+         end;
+      end if;
+
+      return Result;
+   end System_Clock_Frequencies;
 
    --------------------
    -- PLLI2S_Enabled --

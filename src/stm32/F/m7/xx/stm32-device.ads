@@ -68,7 +68,7 @@ package STM32.Device is
    --  Raised by the routines below for a device passed as an actual parameter
    --  when that device is not present on the given hardware instance.
 
-   HSI_VALUE      : constant := 16_000_000;
+   --  HSI_VALUE      : constant := 16_000_000;
    --  Internal oscillator in Hz
 
    --  HSE_VALUE      : constant UInt32;
@@ -561,17 +561,19 @@ package STM32.Device is
    -- Reset and Clock Control --
    -----------------------------
 
-  --   type RCC_System_Clocks is record
-  --      SYSCLK  : UInt32;
-  --      HCLK    : UInt32;
-  --      PCLK1   : UInt32;
-  --      PCLK2   : UInt32;
-  --      TIMCLK1 : UInt32;
-  --      TIMCLK2 : UInt32;
-  --      I2SCLK  : UInt32;
-  --   end record;
+   type RCC_System_Clocks is record
+      SYSCLK  : UInt32;
+      HCLK    : UInt32;
+      PCLK1   : UInt32;
+      PCLK2   : UInt32;
+      TIMCLK1 : UInt32;
+      TIMCLK2 : UInt32;
+      I2SCLK  : UInt32;
+   end record;
 
-  --   function System_Clock_Frequencies return RCC_System_Clocks;
+   procedure Set_High_Speed_External_Clock (Frequency : in out UInt32);
+
+   function System_Clock_Frequencies return RCC_System_Clocks;
 
   --   procedure Set_PLLI2S_Factors (Pll_N : UInt9;
   --                                 Pll_R : UInt3);
